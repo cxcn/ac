@@ -1,15 +1,18 @@
-package lib
+package ac
 
 import (
+	"bufio"
+	"bytes"
 	"io"
 	"os"
-	"bufio"
 	"unsafe"
 )
 
-/**************************************************************\
+/*
+*************************************************************\
 *                          Constant                            *
-\**************************************************************/
+\*************************************************************
+*/
 const (
 	BufSize = 64 * 4096
 
@@ -147,10 +150,10 @@ func HandleLine(input []byte) (output []byte) {
 			match = (rCursor-mLength+1)<<24 | (rCursor << 16) | info
 
 			// lastMatch.End < match.Begin : add new match
-			if nMatch == 0 || ((Matches[nMatch-1]&MaskEnd)>>16 ) < (match&MaskBegin)>>24 {
+			if nMatch == 0 || ((Matches[nMatch-1]&MaskEnd)>>16) < (match&MaskBegin)>>24 {
 				Matches[nMatch] = match
 				match = 0
-				nMatch ++
+				nMatch++
 				goto done
 			}
 
@@ -169,7 +172,7 @@ func HandleLine(input []byte) (output []byte) {
 		}
 
 	done:
-		rCursor ++
+		rCursor++
 	}
 
 	// stage 2 : replace all match
@@ -187,7 +190,7 @@ func HandleLine(input []byte) (output []byte) {
 		for wCursor = 0; wCursor < rCursor; {
 			if wCursor < mBegin {
 				WriteRune(Cache[wCursor])
-				wCursor ++
+				wCursor++
 				continue
 			}
 			if wCursor == mBegin {
@@ -202,7 +205,7 @@ func HandleLine(input []byte) (output []byte) {
 				continue
 			} else {
 				WriteRune(Cache[wCursor])
-				wCursor ++
+				wCursor++
 			}
 		}
 		return Buf[:BSP]
@@ -243,4 +246,35 @@ func Run(inputPath, outputPath, dictPath string) {
 		writer.Write(HandleLine(line))
 	}
 	writer.Flush()
+}
+
+/*
+*************************************************************\
+*                       Load From File                         *
+\*************************************************************
+*/
+func FromFile(filename string) *AC {
+	dict := make(map[string]int, 1115)
+	f, err := os.OpenFile(filename, os.O_RDONLY, 0660)
+	if err != nil {
+		panic(err)
+	}
+	r := bufio.NewReader(f)
+	for {
+		l, err := r.ReadBytes('\n')
+		if err != nil {
+			break
+		}
+		piece := bytes.Split(bytes.TrimSpace(l), []byte("\t"))
+		key := string(piece[0])
+		switch string(piece[1]) {
+		case StrMovie:
+			dict[key] = TypeMovie
+		case StrMusic:
+			dict[key] = TypeMusic
+		case StrBoth:
+			dict[key] = TypeBoth
+		}
+	}
+	return FromDict(dict)
 }

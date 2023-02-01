@@ -1,15 +1,15 @@
-package main
+package ac
 
 import (
-	"os"
-	"fmt"
-	"time"
-	"flag"
 	"crypto/md5"
-	"io/ioutil"
 	"encoding/hex"
+	"flag"
+	"fmt"
+	"io/ioutil"
+	"os"
 	"runtime/pprof"
-	"github.com/Vonng/ac/lib"
+	"testing"
+	"time"
 )
 
 const (
@@ -31,9 +31,9 @@ var (
 *                          Correctness                         *
 \**************************************************************/
 // Check run program once ,do prof and check sig
-func Check() {
+func CheckAC() {
 	begin := time.Now()
-	lib.Run(inputPath, outputPath, dictPath)
+	Run(inputPath, outputPath, dictPath)
 	elapse := time.Now().Sub(begin)
 
 	// Check correctness
@@ -64,7 +64,7 @@ func Benchmark(n int) {
 	bench := make([]int64, n)
 	for i := 0; i < n; i++ {
 		begin := time.Now()
-		lib.Run(inputPath, outputPath, dictPath)
+		Run(inputPath, outputPath, dictPath)
 		elapse := int64(time.Now().Sub(begin))
 		fmt.Printf("Round %d: %s\n", i, time.Duration(elapse))
 		bench[i] = elapse
@@ -75,7 +75,7 @@ func Benchmark(n int) {
 		for j := i; j > 0 && bench[j] < bench[j-1]; bench[j], bench[j-1], j = bench[j-1], bench[j], j-1 {
 		}
 	}
-	bench = bench[1:len(bench)-1]
+	bench = bench[1 : len(bench)-1]
 
 	// avg
 	var sum int64
@@ -90,13 +90,13 @@ func Benchmark(n int) {
 *                          Driver                              *
 \**************************************************************/
 
-func main() {
+func TestAC(t *testing.T) {
 	flag.StringVar(&dictPath, "d", defaultDictPath, "dict filename")
 	flag.StringVar(&inputPath, "i", defaultInputPath, "input filename")
 	flag.StringVar(&outputPath, "o", defaultOutputPath, "output filename")
 	flag.StringVar(&profilePath, "p", "", "profile filename")
 	flag.Parse()
 
-	Check()
+	CheckAC()
 	Benchmark(10)
 }

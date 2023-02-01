@@ -1,16 +1,15 @@
-package lib
+package ac
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"os"
 	"sort"
 )
 
-/**************************************************************\
+/*
+*************************************************************\
 *                          Constant                            *
-\**************************************************************/
+\*************************************************************
+*/
 const (
 	ResizeDelta = 64
 
@@ -35,7 +34,7 @@ func FromDict(dict map[string]int) *AC {
 	// convert dict to []rune array
 	keywords := make([][]rune, len(dict))
 	i := 0
-	for k, _ := range dict {
+	for k := range dict {
 		keywords[i] = []rune(k)
 		i += 1
 	}
@@ -65,38 +64,11 @@ func FromDict(dict map[string]int) *AC {
 	return &ac
 }
 
-/**************************************************************\
-*                       Load From File                         *
-\**************************************************************/
-func FromFile(filename string) *AC {
-	dict := make(map[string]int, 1115)
-	f, err := os.OpenFile(filename, os.O_RDONLY, 0660)
-	if err != nil {
-		panic(err)
-	}
-	r := bufio.NewReader(f)
-	for {
-		l, err := r.ReadBytes('\n')
-		if err != nil {
-			break
-		}
-		piece := bytes.Split(bytes.TrimSpace(l), []byte("\t"))
-		key := string(piece[0])
-		switch string(piece[1]) {
-		case StrMovie:
-			dict[key] = TypeMovie
-		case StrMusic:
-			dict[key] = TypeMusic
-		case StrBoth:
-			dict[key] = TypeBoth
-		}
-	}
-	return FromDict(dict)
-}
-
-/**************************************************************\
+/*
+*************************************************************\
 *                      Raw AC Automation                       *
-\**************************************************************/
+\*************************************************************
+*/
 type Automation struct {
 	trie    *DoubleArrayTrie
 	failure []int
@@ -111,7 +83,7 @@ func (m *Automation) Build(keywords [][]rune) (err error) {
 
 	d := new(DAT)
 
-	trie := new(LinkedListTrie)
+	var trie *LinkedListTrie
 	m.trie, trie, err = d.Build(keywords)
 	if err != nil {
 		return err
@@ -146,7 +118,7 @@ func (m *Automation) Build(keywords [][]rune) (err error) {
 				inState = m.failure[inState]
 				goto set_state
 			}
-			if _, ok := m.output[outState]; ok != false {
+			if _, ok := m.output[outState]; ok {
 				m.output[n.Base] = append(m.output[outState], m.output[n.Base]...)
 			}
 			m.failure[n.Base] = outState
@@ -206,9 +178,11 @@ type DoubleArrayTrie struct {
 type dartsKey []rune
 type datKeySlice []dartsKey
 
-/**************************************************************\
+/*
+*************************************************************\
 *                      Double Array Trie                       *
-\**************************************************************/
+\*************************************************************
+*/
 type DAT struct {
 	dat          *DoubleArrayTrie
 	llt          *LinkedListTrie
@@ -243,8 +217,6 @@ func (k datKeySlice) Less(i, j int) bool {
 		}
 		pos++
 	}
-
-	return false
 }
 
 func (k datKeySlice) Swap(i, j int) {
@@ -296,10 +268,10 @@ func (d *DAT) Build(keywords [][]rune) (*DoubleArrayTrie, *LinkedListTrie, error
 }
 
 func (d *DAT) resize(size int) {
-	d.dat.Base = append(d.dat.Base, make([]int, (size - len(d.dat.Base)))...)
-	d.dat.Check = append(d.dat.Check, make([]int, (size - len(d.dat.Check)))...)
+	d.dat.Base = append(d.dat.Base, make([]int, (size-len(d.dat.Base)))...)
+	d.dat.Check = append(d.dat.Check, make([]int, (size-len(d.dat.Check)))...)
 
-	d.used = append(d.used, make([]bool, (size - len(d.used)))...)
+	d.used = append(d.used, make([]bool, (size-len(d.used)))...)
 }
 
 func (d *DAT) fetch(parent *LinkedListTrieNode) (siblings [](*LinkedListTrieNode), err error) {
@@ -405,7 +377,7 @@ func (d *DAT) insert(siblings [](*LinkedListTrieNode)) (int, error) {
 		}
 
 		for i := 1; i < len(siblings); i++ {
-			if 0 != d.dat.Check[begin+int(siblings[i].Code)] {
+			if d.dat.Check[begin+int(siblings[i].Code)] != 0 {
 				goto next
 			}
 		}
